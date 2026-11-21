@@ -1,0 +1,95 @@
+// Karkain-UI - reusable interface component and property model.
+// Karkain Language v1.2.0 verified baseline (tag v1.2.0,
+// commit 77d70693e1e3134dac312a303bffafa7d50fa988).
+//
+// Scope boundary: this framework models component metadata and properties
+// in portable Karkain. It does not render pixels or manipulate a display.
+//
+// Component representation: [name, kind, key, value, key, value, ...].
+// Arrays are values; mutating functions return the updated component.
+
+// new_component creates a component with no properties.
+public func new_component(name, kind) {
+    let c = []
+    c = push(c, name)
+    c = push(c, kind)
+    return c
+}
+
+// component_name returns the component name.
+public func component_name(component) {
+    return component[0]
+}
+
+// component_kind returns the component kind.
+public func component_kind(component) {
+    return component[1]
+}
+
+// has_prop reports whether a property exists.
+public func has_prop(component, key) {
+    let i = 2
+    while (i < len(component)) {
+        if component[i] == key {
+            return true
+        }
+        i = i + 2
+    }
+    return false
+}
+
+// get_prop returns a property value or a fallback.
+public func get_prop(component, key, fallback) {
+    let i = 2
+    while (i < len(component)) {
+        if component[i] == key {
+            return component[i + 1]
+        }
+        i = i + 2
+    }
+    return fallback
+}
+
+// set_prop adds or replaces a property.
+public func set_prop(component, key, value) {
+    let out = []
+    out = push(out, component[0])
+    out = push(out, component[1])
+    let i = 2
+    while (i < len(component)) {
+        if component[i] == key {
+            out = push(out, key)
+            out = push(out, value)
+        } else {
+            out = push(out, component[i])
+            out = push(out, component[i + 1])
+        }
+        i = i + 2
+    }
+    if has_prop(out, key) == false {
+        out = push(out, key)
+        out = push(out, value)
+    }
+    return out
+}
+
+// prop_count returns the number of properties.
+public func prop_count(component) {
+    return (len(component) - 2) / 2
+}
+
+// render_text produces a deterministic textual rendering of properties.
+public func render_text(component) {
+    let out = component_kind(component) + " " + component_name(component)
+    let i = 2
+    while (i < len(component)) {
+        out = out + " " + component[i] + "=" + str(component[i + 1])
+        i = i + 2
+    }
+    return out
+}
+
+// describe_component builds a one-line component diagnostic.
+public func describe_component(component) {
+    return component_name(component) + ":" + component_kind(component) + ":props=" + str(prop_count(component))
+}

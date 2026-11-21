@@ -1,0 +1,11 @@
+// Integration verification for the Karkain-UI public API.
+import ui
+
+func main() {
+    let c = new_component("submit", "button")
+    c = set_prop(c, "label", "Submit")
+    c = set_prop(c, "width", 200)
+    assert_eq(prop_count(c), 2)
+    println(describe_component(c))
+    println(render_text(c))
+}

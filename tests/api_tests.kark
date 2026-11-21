@@ -1,0 +1,55 @@
+// Native tests for Karkain-UI.
+
+func sample_component() {
+    let c = new_component("save", "button")
+    c = set_prop(c, "label", "Save")
+    return set_prop(c, "width", 120)
+}
+
+func test_new_component() {
+    let c = new_component("save", "button")
+    assert_eq(component_name(c), "save")
+    assert_eq(component_kind(c), "button")
+    assert_eq(prop_count(c), 0)
+}
+
+func test_set_prop() {
+    let c = sample_component()
+    assert_eq(prop_count(c), 2)
+    assert(has_prop(c, "label"))
+    assert_eq(get_prop(c, "label", ""), "Save")
+    assert_eq(get_prop(c, "width", 0), 120)
+}
+
+func test_get_prop_fallback() {
+    let c = sample_component()
+    assert_eq(get_prop(c, "missing", "fallback"), "fallback")
+    assert(has_prop(c, "missing") == false)
+}
+
+func test_set_prop_replaces() {
+    let c = set_prop(sample_component(), "label", "Store")
+    assert_eq(prop_count(c), 2)
+    assert_eq(get_prop(c, "label", ""), "Store")
+}
+
+func test_prop_order_preserved() {
+    let c = sample_component()
+    assert_eq(c[2], "label")
+    assert_eq(c[4], "width")
+}
+
+func test_render_text() {
+    let c = sample_component()
+    assert_eq(render_text(c), "button save label=Save width=120")
+    assert_eq(render_text(new_component("x", "label")), "label x")
+}
+
+func test_describe_component() {
+    assert_eq(describe_component(sample_component()), "save:button:props=2")
+}
+
+func test_empty_key_fallback() {
+    let c = new_component("x", "label")
+    assert_eq(get_prop(c, "x", "none"), "none")
+}

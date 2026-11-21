@@ -1,0 +1,7 @@
+name = "karkain-ui"
+version = "0.1.0-dev"
+description = "Reusable interface component and property model for Karkain"
+license = "MIT"
+targets = ["native"]
+
+[dependencies]

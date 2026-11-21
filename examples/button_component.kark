@@ -1,0 +1,12 @@
+// Karkain-UI runnable example: construct and describe a component.
+import ui
+
+func main() {
+    let b = new_component("ok", "button")
+    b = set_prop(b, "label", "OK")
+    b = set_prop(b, "variant", "primary")
+
+    println(describe_component(b))
+    println(render_text(b))
+    println("label=" + get_prop(b, "label", ""))
+}
