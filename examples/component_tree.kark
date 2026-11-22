@@ -1,0 +1,20 @@
+// Karkain-UI Phase 2 example: component tree, events, form and theme.
+import ui
+
+func main() {
+    let registry = register_component(new_registry(), panel_component("root"))
+    println("registry=" + str(registry_count(registry)))
+
+    let btn = button_component("save", "Save")
+    let bindings = bind_event(new_bindings(), btn, "click", "handler")
+    let log = dispatch_component_event(bindings, [], btn, "click")
+    println("events=" + str(len(log)))
+
+    let form = add_form_field(new_form(), "name", true)
+    let values = set_prop(new_component("v", "form"), "name", "Ajit")
+    println("form_errors=" + str(validate_form(form, values)))
+
+    let theme = set_token(new_theme("dark"), "color", "black")
+    println("style=" + resolve_style(theme, btn))
+    println("role=" + semantic_role(set_semantic(btn, "button")))
+}

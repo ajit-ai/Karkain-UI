@@ -53,3 +53,93 @@ func test_empty_key_fallback() {
     let c = new_component("x", "label")
     assert_eq(get_prop(c, "x", "none"), "none")
 }
+
+// --- Phase 2 regression ---
+
+func test_phase1_regression() {
+    let c = set_prop(new_component("save", "button"), "label", "Save")
+    assert_eq(component_name(c), "save")
+    assert_eq(component_kind(c), "button")
+    assert_eq(get_prop(c, "label", ""), "Save")
+    assert_eq(prop_count(c), 1)
+    assert_eq(render_text(c), "button save label=Save")
+}
+
+// --- Phase 2 additions ---
+
+func test_component_lifecycle() {
+    let c = mount_component(new_component("c", "panel"))
+    assert_eq(component_state(c), "mounted")
+    assert_eq(component_state(unmount_component(c)), "unmounted")
+    assert_eq(component_state(new_component("c", "panel")), "idle")
+}
+
+func test_component_registry() {
+    let r = register_component(register_component(new_registry(), new_component("a", "label")), new_component("b", "button"))
+    assert_eq(registry_count(r), 2)
+    assert_eq(component_name(find_component(r, "a")), "a")
+    assert_eq(component_kind(find_component(r, "missing")), "missing")
+    let replaced = register_component(r, new_component("a", "panel"))
+    assert_eq(registry_count(replaced), 2)
+    assert_eq(component_kind(find_component(replaced, "a")), "panel")
+}
+
+func test_component_tree() {
+    let t = add_child(add_child(new_tree(), "root", "a"), "root", "b")
+    assert_eq(tree_size(t), 2)
+    let children = children_of(t, "root")
+    assert_eq(len(children), 2)
+    assert_eq(children[0], "a")
+    assert_eq(len(children_of(t, "none")), 0)
+}
+
+func test_prop_key_validation() {
+    assert(valid_prop_key("label"))
+    assert(valid_prop_key("") == false)
+    assert(valid_prop_key("bad key") == false)
+}
+
+func test_core_components() {
+    assert_eq(component_kind(container_component("c1")), "container")
+    assert_eq(component_kind(panel_component("p1")), "panel")
+    assert_eq(get_prop(label_component("l1", "hi"), "text", ""), "hi")
+    assert_eq(get_prop(button_component("b1", "OK"), "text", ""), "OK")
+    assert(checkbox_component("x1", true))
+    assert(input_component("i1", "abc"))
+    assert(radio_component("r1", "one"))
+    assert_eq(component_kind(list_component("li")), "list")
+    assert_eq(component_kind(table_component("t")), "table")
+    assert_eq(component_kind(form_component("f")), "form")
+    assert_eq(component_kind(navigation_component("n")), "navigation")
+    assert_eq(component_kind(dialog_component("d")), "dialog")
+}
+
+func test_event_binding() {
+    let btn = button_component("save", "Save")
+    let b = bind_event(bind_event(new_bindings(), btn, "click", "handler1"), btn, "click", "handler2")
+    let h = handlers_for(b, btn, "click")
+    assert_eq(len(h), 2)
+    let log = dispatch_component_event(b, [], btn, "click")
+    assert_eq(len(log), 2)
+    assert_eq(log[0], "save>click>handler1")
+    assert_eq(len(dispatch_component_event(new_bindings(), [], btn, "click")), 0)
+}
+
+func test_form_validation() {
+    let f = add_form_field(add_form_field(new_form(), "name", true), "note", false)
+    let empty = new_component("values", "form")
+    assert_eq(validate_form(f, empty), 1)
+    let filled = set_prop(empty, "name", "Ajit")
+    assert_eq(validate_form(f, filled), 0)
+}
+
+func test_themes_and_accessibility() {
+    let theme = set_token(set_token(new_theme("dark"), "color", "black"), "font", "sans")
+    assert_eq(token_value(theme, "color", ""), "black")
+    assert_eq(token_value(theme, "missing", "x"), "x")
+    let btn = set_focus_order(set_semantic(button_component("b", "Go"), "button"), 3)
+    assert_eq(semantic_role(btn), "button")
+    assert_eq(focus_order(btn), 3)
+    assert_eq(resolve_style(theme, btn), "button:black")
+    assert_eq(validation_contract(), "validation.validate(schema,value)")
+}

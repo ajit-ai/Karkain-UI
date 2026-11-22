@@ -93,3 +93,240 @@ public func render_text(component) {
 public func describe_component(component) {
     return component_name(component) + ":" + component_kind(component) + ":props=" + str(prop_count(component))
 }
+
+// ---------------------------------------------------------------------------
+// Phase 2 additions. Phase 1 component/property API is unchanged. All
+// behaviour below is executable component state logic; native rendering and
+// accessibility integration require platform adapters and remain BLOCKED.
+
+// component_state returns a component state property or "idle".
+public func component_state(component) {
+    return get_prop(component, "state", "idle")
+}
+
+// set_component_state records a component state.
+public func set_component_state(component, state) {
+    return set_prop(component, "state", state)
+}
+
+// mount_component marks a component mounted.
+public func mount_component(component) {
+    return set_component_state(component, "mounted")
+}
+
+// unmount_component marks a component unmounted.
+public func unmount_component(component) {
+    return set_component_state(component, "unmounted")
+}
+
+// new_registry creates an empty component registry.
+public func new_registry() {
+    return []
+}
+
+// register_component adds or replaces a component by name.
+public func register_component(registry, component) {
+    let out = []
+    out = push(out, component_name(component))
+    out = push(out, component)
+    let i = 0
+    while (i < len(registry)) {
+        if registry[i] == component_name(component) {
+            i = i + 2
+        } else {
+            out = push(out, registry[i])
+            out = push(out, registry[i + 1])
+            i = i + 2
+        }
+    }
+    return out
+}
+
+// registry_count returns the number of registered components.
+public func registry_count(registry) { return len(registry) / 2 }
+
+// find_component returns a registered component or an empty component.
+public func find_component(registry, name) {
+    let i = 0
+    while (i < len(registry)) {
+        if registry[i] == name { return registry[i + 1] }
+        i = i + 2
+    }
+    return new_component("", "missing")
+}
+
+// new_tree creates an empty component tree.
+public func new_tree() {
+    return []
+}
+
+// add_child records a parent/child relationship.
+public func add_child(tree, parent, child) {
+    let out = tree
+    out = push(out, parent)
+    out = push(out, child)
+    return out
+}
+
+// children_of returns the children of a parent.
+public func children_of(tree, parent) {
+    let out = []
+    let i = 0
+    while (i < len(tree)) {
+        if tree[i] == parent { out = push(out, tree[i + 1]) }
+        i = i + 2
+    }
+    return out
+}
+
+// tree_size returns the number of parent/child edges.
+public func tree_size(tree) { return len(tree) / 2 }
+
+// valid_prop_key rejects empty keys and keys with spaces.
+public func valid_prop_key(key) {
+    if len(key) == 0 { return false }
+    if contains(name_has_space(key), "y") { return false }
+    return true
+}
+
+// name_has_space reports whether a key contains a space.
+public func name_has_space(key) {
+    let i = 0
+    while (i < len(key)) {
+        if key[i] == " " { return "yes" }
+        i = i + 1
+    }
+    return "no"
+}
+
+// container_components construct reusable logical components.
+public func container_component(id) { return set_prop(new_component(id, "container"), "state", "idle") }
+public func panel_component(id) { return set_prop(new_component(id, "panel"), "state", "idle") }
+public func label_component(id, text) { return set_prop(new_component(id, "label"), "text", text) }
+public func button_component(id, text) { return set_prop(new_component(id, "button"), "text", text) }
+public func checkbox_component(id, checked) { return set_prop(new_component(id, "checkbox"), "checked", checked) }
+public func input_component(id, value) { return set_prop(new_component(id, "input"), "value", value) }
+public func radio_component(id, selected) { return set_prop(new_component(id, "radio"), "selected", selected) }
+public func list_component(id) { return new_component(id, "list") }
+public func table_component(id) { return new_component(id, "table") }
+public func form_component(id) { return new_component(id, "form") }
+public func navigation_component(id) { return new_component(id, "navigation") }
+public func dialog_component(id) { return new_component(id, "dialog") }
+
+// new_bindings creates an empty component event binding store.
+public func new_bindings() {
+    return []
+}
+
+// bind_event binds a handler to a component event.
+public func bind_event(bindings, component, event, handler) {
+    let out = bindings
+    out = push(out, component_name(component))
+    out = push(out, event)
+    out = push(out, handler)
+    return out
+}
+
+// handlers_for returns handlers for a component event.
+public func handlers_for(bindings, component, event) {
+    let out = []
+    let i = 0
+    while (i < len(bindings)) {
+        if bindings[i] == component_name(component) {
+            if bindings[i + 1] == event { out = push(out, bindings[i + 2]) }
+        }
+        i = i + 3
+    }
+    return out
+}
+
+// dispatch_component_event appends delivery records for each handler.
+public func dispatch_component_event(bindings, log, component, event) {
+    let out = log
+    let names = handlers_for(bindings, component, event)
+    let i = 0
+    while (i < len(names)) {
+        out = push(out, component_name(component) + ">" + event + ">" + names[i])
+        i = i + 1
+    }
+    return out
+}
+
+// new_form creates an empty form model.
+public func new_form() {
+    return []
+}
+
+// add_form_field declares a form field and required flag.
+public func add_form_field(form, name, required) {
+    let out = form
+    out = push(out, name)
+    out = push(out, required)
+    return out
+}
+
+// validate_form counts missing required values.
+public func validate_form(form, values) {
+    let n = 0
+    let i = 0
+    while (i < len(form)) {
+        if form[i + 1] {
+            if len(get_prop(values, form[i], "")) == 0 { n = n + 1 }
+        }
+        i = i + 2
+    }
+    return n
+}
+
+// new_theme creates a named theme.
+public func new_theme(name) {
+    let t = []
+    t = push(t, name)
+    return t
+}
+
+// set_token records a design token.
+public func set_token(theme, key, value) {
+    let out = theme
+    out = push(out, key)
+    out = push(out, value)
+    return out
+}
+
+// token_value returns a design token or a fallback.
+public func token_value(theme, key, fallback) {
+    let i = 1
+    while (i < len(theme)) {
+        if theme[i] == key { return theme[i + 1] }
+        i = i + 2
+    }
+    return fallback
+}
+
+// resolve_style builds a style string for a component from a theme.
+public func resolve_style(theme, component) {
+    return component_kind(component) + ":" + token_value(theme, "color", "default")
+}
+
+// set_semantic records an accessibility role.
+public func set_semantic(component, role) {
+    return set_prop(component, "semantic", role)
+}
+
+// semantic_role returns an accessibility role or "none".
+public func semantic_role(component) {
+    return get_prop(component, "semantic", "none")
+}
+
+// set_focus_order records focus order metadata.
+public func set_focus_order(component, order) {
+    return set_prop(component, "focus", order)
+}
+
+// focus_order returns focus order or 0.
+public func focus_order(component) {
+    return get_prop(component, "focus", 0)
+}
+
+// validation_contract documents Karkain-Validation integration.
+public func validation_contract() { return "validation.validate(schema,value)" }
